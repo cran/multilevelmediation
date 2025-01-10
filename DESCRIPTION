@@ -1,8 +1,8 @@
 Package: multilevelmediation
 Type: Package
 Title: Utility Functions for Multilevel Mediation Analysis
-Version: 0.3.1
-Date: 2024-02-27
+Version: 0.4.1
+Date: 2024-12-28
 Authors@R: 
   c(person(given = c("Carl","F."),
            family = "Falk",
@@ -18,7 +18,7 @@ Authors@R:
            family = "Miočević",
            role = "aut"))
 Maintainer: Carl F. Falk <carl.falk@mcgill.ca>
-BugReports: https://github.com/falkcarl/multilevelmediation
+BugReports: https://github.com/falkcarl/multilevelmediation/issues
 Description: The ultimate goal is to support 2-2-1, 2-1-1, and 1-1-1 models for
  multilevel mediation, the option of a moderating variable for either the a, b,
  or both paths, and covariates. Currently the 1-1-1 model is supported
@@ -30,17 +30,17 @@ Description: The ultimate goal is to support 2-2-1, 2-1-1, and 1-1-1 models for
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Imports: furrr, future, matrixcalc, MCMCpack, nlme, parallel,
-        parallelly, stats, tidyr, brms, posterior
-Suggests: testthat (>= 3.0.0), boot
+        parallelly, stats, tidyr, brms, posterior, glmmTMB
+Suggests: testthat (>= 3.0.0), boot, BH
 Depends: R (>= 2.10)
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2024-02-28 00:21:41 UTC; CarlFalkMcGill
+Packaged: 2025-01-10 11:48:17 UTC; CarlFalkMcGill
 Author: Carl F. Falk [cre, aut],
   Todd Vogel [aut],
   Sarah Hammami [aut],
   Milica Miočević [aut]
 Repository: CRAN
-Date/Publication: 2024-02-29 11:50:05 UTC
+Date/Publication: 2025-01-10 12:10:02 UTC

@@ -26,9 +26,11 @@ modmed.mlm(
   random.mod.y = FALSE,
   random.covars.m = NULL,
   random.covars.y = NULL,
-  method = "REML",
-  control = lmeControl(maxIter = 10000, msMaxIter = 10000, niterEM = 10000, msMaxEval =
-    10000, tolerance = 1e-06),
+  random.int.m = TRUE,
+  random.int.y = TRUE,
+  estimator = c("lme", "glmmTMB"),
+  method = c("REML", "ML"),
+  control = NULL,
   returndata = FALSE,
   datmfun = NULL,
   data.stacked = NULL,
@@ -74,20 +76,32 @@ modmed.mlm(
 
 \item{random.mod.y}{(Logical) Add random slope for effect of moderator on Y?}
 
-\item{random.covars.m}{(Logical vector) Add random slopes for covariates on M?}
+\item{random.covars.m}{(Character vector) If any covariates specified from \code{covars.m} are present, random effects
+are added for them.}
 
-\item{random.covars.y}{(Logical vector) Add random slopes for covariates on Y?}
+\item{random.covars.y}{(Character vector) If any covariates specified from \code{covars.y} are present, random effects
+are added for them.}
 
-\item{method}{Argument passed to \code{\link[nlme]{lme}} to control estimation method.}
+\item{random.int.m}{(Logical) Add random intercept for M? (defaults to TRUE)}
 
-\item{control}{Argument passed to \code{\link[nlme]{lme}} that controls other estimation options.}
+\item{random.int.y}{(Logical) Add random intercept for Y? (defaults to TRUE)}
+
+\item{estimator}{(Character) Which program to use to estimate models? \code{\link[nlme]{lme}} is what was originally tested
+with the package and publication, but support for \code{\link[glmmTMB]{glmmTMB}} is now available.}
+
+\item{method}{Argument used to control estimation method. Options are "REML" (default) or "ML".}
+
+\item{control}{Argument passed to \code{\link[nlme]{lme}} or \code{\link[glmmTMB]{glmmTMB}} that controls other estimation options.
+See those functions for the \code{control} argument. If \code{\link[nlme]{lme}} is chosen for estimation, but nothing is specified
+for \code{control}, some defaults values are populated that basically greatly increase the number of admissible
+iterations.}
 
 \item{returndata}{(Logical) Whether to save restructured data in its own slot. Note: nlme may do this automatically. Defaults to \code{FALSE}.}
 
 \item{datmfun}{(experimental) A function that will do additional data manipulation on the restacked dataset. The function ought to take
 the restacked dataset (e.g., done using \code{\link{stack_bpg}}) and return a dataset that can be analyzed using \code{\link{modmed.mlm}} Could be used for
 some kind of additional centering strategy after data are restacked (and after bootstrapped) or some other missing data handling strategy.
-Either suggestion requires further study.#'}
+Either suggestion requires further study.}
 
 \item{data.stacked}{(experimental) Currently used internally by bootresid.modmed.mlm to feed already stacked data to the function.}
 

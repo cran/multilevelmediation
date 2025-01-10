@@ -26,6 +26,8 @@ modmed.mlm.brms(
   random.mod.y = FALSE,
   random.covars.m = NULL,
   random.covars.y = NULL,
+  random.int.m = TRUE,
+  random.int.y = TRUE,
   returndata = FALSE,
   family = gaussian,
   iter = 7000,
@@ -53,9 +55,9 @@ modmed.mlm.brms(
 
 \item{mod.cprime}{(Logical) Add moderator to 'c' path (i.e., SyX:W, where W is the moderator)}
 
-\item{covars.m}{(Character vector) Optional covariates to include in the model for M. (not yet implemented for brms)}
+\item{covars.m}{(Character vector) Optional covariates to include in the model for M.}
 
-\item{covars.y}{(Character vector) Optional covariates to include in the model for Y. (not yet implemented for brms)}
+\item{covars.y}{(Character vector) Optional covariates to include in the model for Y.}
 
 \item{random.a}{(Logical) Add random slope for 'a' path (i.e,. SmX)?}
 
@@ -73,9 +75,13 @@ modmed.mlm.brms(
 
 \item{random.mod.y}{(Logical) Add random slope for effect of moderator on Y?}
 
-\item{random.covars.m}{(Logical vector) Add random slopes for covariates on M? (not yet implemented for brms)}
+\item{random.covars.m}{(Logical vector) Add random slopes for covariates on M?}
 
-\item{random.covars.y}{(Logical vector) Add random slopes for covariates on Y? (not yet implemented for brms)}
+\item{random.covars.y}{(Logical vector) Add random slopes for covariates on Y?}
+
+\item{random.int.m}{(Logical) Add random intercept for M? (defaults to TRUE)}
+
+\item{random.int.y}{(Logical) Add random intercept for Y? (defaults to TRUE)}
 
 \item{returndata}{(Logical) Whether to save restructured data in its own slot. Defaults to \code{FALSE}.}
 

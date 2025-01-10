@@ -129,6 +129,7 @@
 boot.modmed.mlm <- function(data, indices, L2ID, ...,
                             type="all", modval1=NULL, modval2=NULL,
                             boot.lvl = c("both","1","2")) {
+  warning("boot.modmed.mlm is deprecated (programmer speak for will eventually be replaced in favor of boot.modmed.mlm.custom)")
 
   boot.lvl <- match.arg(boot.lvl)
 
@@ -142,7 +143,7 @@ boot.modmed.mlm <- function(data, indices, L2ID, ...,
     if (boot.lvl == "both") {
       # Resample at L2 and then L1 within each L2 unit
       # Resample L2 units
-      L2 <- unique(data[, L2ID])
+      L2 <- unlist(unique(data[, L2ID], use.names=FALSE))
       N <- length(L2)
       L2_indices <- sample(L2, N, replace = TRUE)
       # Resample L1 units
@@ -162,7 +163,7 @@ boot.modmed.mlm <- function(data, indices, L2ID, ...,
 
     } else if (boot.lvl == "2") {
       # Resample L2 units only
-      L2 <- unique(data[, L2ID])
+      L2 <- unlist(unique(data[, L2ID], use.names=FALSE))
       N <- length(L2)
       L2_indices <- sample(L2, N, replace = TRUE)
       rdat <- lapply(L2_indices, function(x) {
@@ -253,11 +254,14 @@ boot.modmed.mlm <- function(data, indices, L2ID, ...,
 #'
 #'
 #' }
+#' @importFrom nlme random.effects
 #' @importFrom stats resid var model.matrix terms
 #' @export bootresid.modmed.mlm
 bootresid.modmed.mlm <- function(data, L2ID, R=1000, X, Y, M,
                                  moderator=NULL, covars.m=NULL, covars.y=NULL, ...,
                             type="all", modval1=NULL, modval2=NULL) {
+
+  warning("bootresid.modmed.mlm is deprecated (programmer speak for will eventually be replaced in favor of boot.modmed.mlm.custom)")
 
   # data that's being used
   tmp <- stack_bpg(data, L2ID, X, Y, M,
@@ -269,6 +273,10 @@ bootresid.modmed.mlm <- function(data, L2ID, R=1000, X, Y, M,
   # fit initial model
   init.mod <- modmed.mlm(data, L2ID, X, Y, M,
                          moderator=moderator, covars.m=covars.m, covars.y=covars.y, ...)
+
+  if(inherits(init.mod$model, "glmmTMB")){
+    stop("residual bootstrap not yet supported for glmmTMB")
+  }
 
   ## Extract relevant stuff
 
@@ -348,15 +356,14 @@ bootresid.modmed.mlm <- function(data, L2ID, R=1000, X, Y, M,
 
     # Then, just directly compute Y and M
     tmp2 <- merge(tmp, as.data.frame(model.matrix(init.mod$model$terms, tmp)), sort=FALSE)
-    Zs<-lapply(l2groups, function(grp){
+    for(grp in l2groups){
       tmpsub<-as.matrix(tmp2[tmp2$L2id %in% grp, colnames(bootcoef)])
       tmpcoef<-bootcoef[which(l2groups%in%grp), ]
-      tmpsub%*%t(t(tmpcoef))
-    })
-    Zs<-do.call("c",Zs)
+      tmp2[tmp2$L2id %in% grp, "Z"] <- tmpsub%*%t(t(tmpcoef)) # add Y and M to data frame
+    }
 
-    # add Y and M to data frame
-    tmp2$Z<-Zs+l1resid.boot
+    # add l1 residuals
+    tmp2$Z<-tmp2$Z+l1resid.boot
     tmp2 <- tmp2[,c("L2id",names(attr(terms(init.mod$model),"dataClasses")))]
 
     # fit model
@@ -405,15 +412,24 @@ bootresid.modmed.mlm <- function(data, L2ID, R=1000, X, Y, M,
 #' @param random.mod.cprime (Logical) Add random slope for 'c' path moderator?
 #' @param random.mod.m (Logical) Add random slope for effect of moderator on M?
 #' @param random.mod.y (Logical) Add random slope for effect of moderator on Y?
-#' @param random.covars.m (Logical vector) Add random slopes for covariates on M?
-#' @param random.covars.y (Logical vector) Add random slopes for covariates on Y?
-#' @param method Argument passed to \code{\link[nlme]{lme}} to control estimation method.
-#' @param control Argument passed to \code{\link[nlme]{lme}} that controls other estimation options.
+#' @param random.covars.m (Character vector) If any covariates specified from \code{covars.m} are present, random effects
+#'   are added for them.
+#' @param random.covars.y (Character vector) If any covariates specified from \code{covars.y} are present, random effects
+#'   are added for them.
+#' @param random.int.m (Logical) Add random intercept for M? (defaults to TRUE)
+#' @param random.int.y (Logical) Add random intercept for Y? (defaults to TRUE)
+#' @param method Argument used to control estimation method. Options are "REML" (default) or "ML".
+#' @param estimator (Character) Which program to use to estimate models? \code{\link[nlme]{lme}} is what was originally tested
+#'   with the package and publication, but support for \code{\link[glmmTMB]{glmmTMB}} is now available.
+#' @param control Argument passed to \code{\link[nlme]{lme}} or \code{\link[glmmTMB]{glmmTMB}} that controls other estimation options.
+#'   See those functions for the \code{control} argument. If \code{\link[nlme]{lme}} is chosen for estimation, but nothing is specified
+#'   for \code{control}, some defaults values are populated that basically greatly increase the number of admissible
+#'   iterations.
 #' @param returndata (Logical) Whether to save restructured data in its own slot. Note: nlme may do this automatically. Defaults to \code{FALSE}.
 #' @param datmfun (experimental) A function that will do additional data manipulation on the restacked dataset. The function ought to take
 #'   the restacked dataset (e.g., done using \code{\link{stack_bpg}}) and return a dataset that can be analyzed using \code{\link{modmed.mlm}} Could be used for
 #'   some kind of additional centering strategy after data are restacked (and after bootstrapped) or some other missing data handling strategy.
-#'   Either suggestion requires further study.#'
+#'   Either suggestion requires further study.
 #' @param data.stacked (experimental) Currently used internally by bootresid.modmed.mlm to feed already stacked data to the function.
 #' @param ... Pass any additional options down to \code{link[nlme]{lme}}. Added to handle missing values. e.g., \code{na.action = na.omit}.
 #' @details Implements custom function to do 1-1-1 multilevel mediation model following Bauer, Preacher, & Gil (2006).
@@ -604,7 +620,8 @@ bootresid.modmed.mlm <- function(data, L2ID, R=1000, X, Y, M,
 #'                 random.a=TRUE, random.b=TRUE, random.cprime=TRUE,
 #'                 na.action = na.omit)
 #' }
-#' @import nlme
+#' @importFrom nlme lmeControl lme fixef getVarCov varIdent
+#' @importFrom glmmTMB glmmTMBControl glmmTMB VarCorr
 #' @importFrom matrixcalc vech
 #' @importFrom MCMCpack xpnd
 #' @importFrom stats as.formula
@@ -616,8 +633,9 @@ modmed.mlm <- function(data, L2ID, X, Y, M,
                      random.mod.a = FALSE, random.mod.b = FALSE, random.mod.cprime = FALSE,
                      random.mod.m = FALSE, random.mod.y = FALSE,
                      random.covars.m = NULL, random.covars.y = NULL,
-                     method="REML", control = lmeControl(maxIter = 10000, msMaxIter = 10000, niterEM = 10000,
-                                                         msMaxEval = 10000, tolerance = 1e-6),
+                     random.int.m = TRUE, random.int.y = TRUE,
+                     estimator = c("lme","glmmTMB"),
+                     method= c("REML","ML"), control = NULL,
                      returndata = FALSE,
                      datmfun = NULL,
                      data.stacked = NULL,
@@ -626,6 +644,17 @@ modmed.mlm <- function(data, L2ID, X, Y, M,
   if (is.null(moderator) && any(mod.a, mod.b, mod.cprime)) {
     # Give error if paths indicated as moderated, but no moderator name given
     stop("No moderator was specified for the moderated path(s).")
+  }
+
+  estimator <- match.arg(estimator)
+  method <- match.arg(method)
+
+  # save default estimation options, for backwards compatibility
+  if(estimator == "lme" & is.null(control)){
+    control <- lmeControl(maxIter = 10000, msMaxIter = 10000, niterEM = 10000,
+               msMaxEval = 10000, tolerance = 1e-6)
+  } else if (estimator == "glmmTMB" & is.null(control)){
+    control <- glmmTMBControl()
   }
 
   if(is.null(data.stacked)){
@@ -670,10 +699,12 @@ modmed.mlm <- function(data, L2ID, X, Y, M,
   }
 
   # Create the formula for the random effects
-  random.formula <- "~ 0 + Sm + Sy"
-  if (random.a == TRUE) {random.formula <- paste(random.formula, "+ SmX")}
-  if (random.b == TRUE) {random.formula <- paste(random.formula, "+ SyM")}
-  if (random.cprime == TRUE) {random.formula <- paste(random.formula, "+ SyX")}
+  random.formula <- "~ 0 "
+  if (random.int.m) {random.formula <- paste(random.formula, "+ Sm")}
+  if (random.int.y) {random.formula <- paste(random.formula, "+ Sy")}
+  if (random.a) {random.formula <- paste(random.formula, "+ SmX")}
+  if (random.b) {random.formula <- paste(random.formula, "+ SyM")}
+  if (random.cprime) {random.formula <- paste(random.formula, "+ SyX")}
 
   # Add random effects for moderator here, if any
   if(random.mod.a && mod.a){random.formula <- paste(random.formula, "+ SmX:W")}
@@ -701,15 +732,38 @@ modmed.mlm <- function(data, L2ID, X, Y, M,
   # Add in the grouping variable after all the variables are entered
   random.formula <- paste(random.formula, "| L2id")
 
+  if(estimator == "lme"){
+    # Run the model through nlme
+    mod_med_tmp <- try(lme(fixed = as.formula(fixed.formula), # fixed effects
+                           random = as.formula(random.formula), # random effects
+                           weights = varIdent(form = ~ 1 | Sm), # heteroskedasticity
+                           data = tmp,
+                           method = method,
+                           control = control,
+                           ...))
+  } else if (estimator == "glmmTMB"){
+    # some quick fixes to get glmmTMB up and running
+    random.formula <- gsub("~ ", "", random.formula)
+    random.formula <- paste0("(",random.formula,")")
+    form <- paste0(fixed.formula,"+", random.formula)
 
-  # Run the model through nlme
-  mod_med_tmp <- try(lme(fixed = as.formula(fixed.formula), # fixed effects
-                         random = as.formula(random.formula), # random effects
-                         weights = varIdent(form = ~ 1 | Sm), # heteroskedasticity
-                         data = tmp,
-                         method = method,
-                         control = control,
-                         ...))
+    mod_med_tmp <- glmmTMB(as.formula(form),
+            dispformula =  ~ 1 + Sm,
+            #dispformula =  ~ 0 + Sm + Sy,
+            family = gaussian,
+            data = tmp,
+            REML = (method=="REML"),
+            control = control,
+            ...)
+
+    #Tangent, can I get asymptotic SEs from glmmTMB?
+    #https://stackoverflow.com/questions/47872561/does-glmmtmb-return-the-standard-error-for-random-effect-variance-components-lik
+    # var-cov matrix for all, including random effects? yes, but these are on a log scale?
+    #mod_med_tmp$sdr
+    #sqrt(diag(vcov(mod_med_tmp, full=TRUE)))
+
+  }
+
 
   # create output list
   out <- list()
@@ -748,6 +802,9 @@ modmed.mlm <- function(data, L2ID, X, Y, M,
     random.mod.y = random.mod.y,
     random.covars.m = random.covars.m,
     random.covars.y = random.covars.y,
+    random.int.m = random.int.m,
+    random.int.y = random.int.y,
+    estimator = estimator,
     method = method,
     control = control,
     returndata = returndata
@@ -820,12 +877,19 @@ extract.modmed.mlm <- function(fit, type=c("all","fixef","recov","recov.vec","in
     nfixefb <- 3 + ifelse(any(modb)||any(modc),1,0) + any(modb) + any(modc) + covb #number of fixed effects second model
     nfex <- nfixefa + nfixefb # combined
 
-    # re due to 2 random intercepts + abc paths
-    #nre <- 2 + sum(unlist(args[grepl("^random\\.[abc]$",names(args))]))
-    nre <- 2 + sum(unlist(args[grepl("^random\\.([ab]|cprime)$",names(args))]))
+    # re due to 2 random intercepts
+    nre <- 0
+    nre <- nre + sum(unlist(args[grepl("^random\\.int\\.([my])$",names(args))]))
+
+    # re due to abc paths
+    nre <- nre + sum(unlist(args[grepl("^random\\.([ab]|cprime)$",names(args))]))
+
+    # re due to covariates
+    nre <- nre + length(unlist(args[grepl("^random\\.covars\\.([my])$",names(args))]))
 
     # re due to moderator effects
     nre <- nre + sum(unlist(args[grepl("^random\\.mod\\.([abym]|cprime)$",names(args))]))
+
     nre <- nre*nre # duplicates not yet removed
 
     out <- vector("numeric")
@@ -859,7 +923,11 @@ extract.modmed.mlm <- function(fit, type=c("all","fixef","recov","recov.vec","in
     #sig2vec <- sig2vec[select]
 
     # extract fixed effects
-    fixed <- fixef(fit$model)
+    if(inherits(fit$model, "glmmTMB")){
+      fixed <- fixef(fit$model)$cond
+    } else {
+      fixed <- fixef(fit$model)
+    }
 
     # generate output, computing other stuff as necessary
     all <- c(fixed, sig2vec)
@@ -880,10 +948,17 @@ extract.modmed.mlm <- function(fit, type=c("all","fixef","recov","recov.vec","in
 
 randef.lme <- function(model){
 
-  # extract var-cov matrix among random effects
-  sig2 <- getVarCov(model)
-  class(sig2) <- "matrix"
-  attr(sig2,"group.levels") <- NULL
+  if(inherits(model, "glmmTMB")){
+    sig2 <- VarCorr(model)$cond$L2id
+    attr(sig2, "stdev") <- NULL
+    attr(sig2, "correlation") <- NULL
+  } else {
+    # extract var-cov matrix among random effects
+    sig2 <- getVarCov(model)
+    class(sig2) <- "matrix"
+    attr(sig2,"group.levels") <- NULL
+  }
+
   re.names<-colnames(sig2)
 
   # rand effects as vector
@@ -891,6 +966,7 @@ randef.lme <- function(model){
   elementnames <- expand.grid(re.names,re.names)
   elementnames <- paste0("re.",elementnames[,1],elementnames[,2])
   names(sig2vec) <- elementnames
+
 
   out<-list(sig2 = sig2,
             sig2vec = sig2vec)

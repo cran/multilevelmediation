@@ -15,10 +15,19 @@ represented.
 
 ## Installation
 
+Note that GitHub contains the development version of the package. If you want
+new, sometimes minimally tested features, install from here.
+
 ``` r
 # From GitHub:
 # install.packages("devtools")
 devtools::install_github("falkcarl/multilevelmediation")
+```
+
+Otherwise, a release should be available on CRAN:
+
+``` r
+install.packages("multilevelmediation")
 ```
 
 ## Some relevant references
@@ -46,7 +55,14 @@ van der Leeden, R., Meijer, E., & Busing, F. M. T. A. (2008). Resampling multile
     - Try converting the data to a data frame. Support to automatically do this may eventually be forthcoming, but it should be easy for the end user to do this.
 
 ## Updates
-
+- Version 0.4.1
+    - Support for covariates for `brms`
+- Version 0.4.0
+    - Support for `glmmTMB` (resid bootstrap still forthcoming).
+    - Bugfix to error handling when covariates have random effects.
+    - Bugfix: residual bootstrap assumed data sorted by IDs
+    - Probable bugfix: bootstrapping with data input as tibble
+    - Ability to omit intercept random effects.
 - Version 0.3.1
     - Random number seed for `boot.modmed.mlm.custom` is not set by default (it's `NULL`).
     - Update to docs.
